@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코인 급등 알림 대시보드</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #22c55e;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 0 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .status-bar {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 1.25rem 2rem;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .recommend-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 2rem;
+        }
+
+        /* 책갈피 상태일 때는 그리드 무시하고 전체 너비 사용 */
+        #recommendList>.comparison-container {
+            grid-column: 1 / -1;
+        }
+
+        .coin-card {
+            background: var(--card-bg);
+            padding: 1.8rem;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: fadeIn 0.6s ease forwards;
+            opacity: 0;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .coin-card:hover {
+            border-color: rgba(79, 70, 229, 0.4);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .bookmark-badge {
+            display: none;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(234, 179, 8, 0.15);
+            color: #facc15;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: 1px solid rgba(234, 179, 8, 0.2);
+            margin-bottom: 1rem;
+            width: fit-content;
+        }
+
+        .card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .coin-identity {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .coin-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .price-container {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+        }
+
+        .price {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+            letter-spacing: -0.03em;
+        }
+
+        .currency {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        .metrics-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .metric-badge {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        .strategy-box {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 16px;
+            padding: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .strategy-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .strategy-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .target-tier {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+
+        .target-tier:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tier-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .tier-price {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .tier-time {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 1024px) {
+            .recommend-list {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                gap: 0.8rem;
+                padding: 1rem;
+                text-align: center;
+                margin-bottom: 1.5rem;
+            }
+
+            .refresh-btn {
+                width: 100%;
+            }
+
+            .comparison-container {
+                flex-direction: column !important;
+                gap: 1rem !important;
+            }
+
+            .price {
+                font-size: 1.6rem !important;
+                /* 모바일에서 더 줄임 */
+            }
+
+            .coin-card {
+                padding: 1.25rem 1rem;
+                gap: 1rem;
+            }
+
+            .metrics-grid {
+                justify-content: flex-start;
+                gap: 0.4rem;
+            }
+
+            .metric-badge {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+                max-width: 140px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .strategy-header {
+                font-size: 0.75rem;
+            }
+
+            .target-tier span {
+                font-size: 0.8rem !important;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>AI 코인 추천 DASHBOARD</h1>
+            <p class="subtitle">일봉 MACD + 1시간봉 10선 분석</p>
+        </header>
+
+        <main>
+            <div class="status-bar">
+                <div class="last-updated" id="lastUpdated">
+                    <div>심층 전략 분석: <span style="color:var(--text)" id="strategyTime">연결 중...</span></div>
+                    <div>실시간 시세 동기: <span style="color:var(--primary)" id="syncTime">대기 중...</span></div>
+                </div>
+                <button class="refresh-btn" onclick="fetchData()">시세 즉시 갱신</button>
+            </div>
+
+            <div id="recommendList" class="recommend-list">
+                <div class="loading">서버 분석 데이터를 가져오는 중...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentData = [];
+
+        // localStorage 기반 책갈피 관리
+        const Bookmarks = {
+            get() {
+                const data = localStorage.getItem('coin_bookmarks');
+                return data ? JSON.parse(data) : {};
+            },
+            save(market) {
+                const coin = currentData.find(c => c.market === market);
+                if (!coin) return;
+
+                const bookmarks = this.get();
+                bookmarks[market] = coin; // 전체 상태 저장 (스냅샷)
+                localStorage.setItem('coin_bookmarks', JSON.stringify(bookmarks));
+                fetchData(); // UI 갱신
+            },
+            remove(market) {
+                const bookmarks = this.get();
+                delete bookmarks[market];
+                localStorage.setItem('coin_bookmarks', JSON.stringify(bookmarks));
+                fetchData(); // UI 갱신
+            }
+        };
+
+        async function fetchData() {
+            const listEl = document.getElementById('recommendList');
+            const stratEl = document.getElementById('strategyTime');
+            const syncEl = document.getElementById('syncTime');
+            const bookmarks = Bookmarks.get();
+
+            try {
+                const response = await fetch('/api/recommend');
+                const data = await response.json();
+
+                if (data.recommendations && data.recommendations.length > 0) {
+                    currentData = data.recommendations; // 최신 데이터를 글로벌 변수에 보관
+                    stratEl.innerText = data.last_updated || '방금 전';
+                    syncEl.innerText = data.last_price_sync || '방금 전';
+
+                    listEl.innerHTML = data.recommendations.map((coin, index) => {
+                        const savedState = bookmarks[coin.market];
+                        const isBookmarked = !!savedState;
+                        const isMobile = window.innerWidth <= 768;
+
+                        // Helper to render a full card inner content
+                        const renderCardContent = (c, price, isLive, savedRef = null) => {
+                            let diffHtml = '';
+                            let savedTagHtml = '';
+
+                            if (isLive && savedRef) {
+                                const diff = price - savedRef;
+                                const rate = (diff / savedRef) * 100;
+                                const color = diff >= 0 ? '#ef4444' : '#3b82f6';
+                                const sign = diff >= 0 ? '+' : '';
+                                diffHtml = `<div style="color: ${color}; font-weight: 800; font-size: 1.1rem; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 8px; border: 1px solid ${color}33;">${sign}${rate.toFixed(2)}%</div>`;
+
+                                if (isMobile) {
+                                    savedTagHtml = `<div style="font-size: 0.7rem; color: #facc15; margin-bottom: 0.3rem;">📌 저장 기준가: ${savedRef.toLocaleString()}원</div>`;
+                                }
+                            }
+
+                            return `
+                                <div class="card-header" style="gap: 0.8rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                                        <div class="coin-identity">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.1rem;">
+                                                <span class="coin-name" style="color: ${isLive ? 'var(--primary)' : 'var(--text-dim)'}; font-size: 0.85rem;">${isLive ? '📡' : '📌'} ${c.market}</span>
+                                                <span style="font-size: 0.65rem; color: var(--text-dim); opacity: 0.6;">${isLive ? '실시간' : '저장됨'}</span>
+                                            </div>
+                                            ${savedTagHtml}
+                                            <div class="price-container">
+                                                <h2 class="price" style="font-size: ${isBookmarked && !isMobile ? '1.8rem' : '2.1rem'}">${price.toLocaleString()}</h2>
+                                                <span class="currency" style="font-size: 0.8rem;">KRW</span>
+                                            </div>
+                                        </div>
+                                        ${diffHtml}
+                                    </div>
+
+                                    <div class="metrics-grid">
+                                        <div class="metric-badge" style="color: #4ade80;">📈 상승 ${((c.normalized_slope || 0) * 1000).toFixed(2)}</div>
+                                        <div class="metric-badge" style="color: #818cf8;">⚡ MACD ${(c.macd_strength || 0).toFixed(2)}</div>
+                                        <div class="metric-badge" style="color: #fbbf24;">💰 ${(c.acc_trade_price_24h / 100000000).toFixed(0)}억</div>
+                                    </div>
+
+                                    <div class="bookmark-controls">
+                                        ${!isLive ? `
+                                            <button class="save-btn active" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 8px; font-weight: 700; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.25); cursor: pointer;" onclick="Bookmarks.remove('${c.market}')">비교 해제</button>
+                                        ` : isBookmarked ? (
+                                    isMobile ? `<button class="save-btn active" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 8px; font-weight: 700; background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.25); cursor: pointer;" onclick="Bookmarks.remove('${c.market}')">📌 감시 중 (해제)</button>` : ''
+                                ) : `
+                                            <button class="save-btn" style="padding: 0.45rem 0.9rem; font-size: 0.75rem; border-radius: 8px; font-weight: 700; background: var(--primary); color: white; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);" onclick="Bookmarks.save('${c.market}')">현재 시세 저장 (책갈피)</button>
+                                        `}
+                                    </div>
+                                </div>
+
+                                <div class="strategy-box" style="padding: 1rem; background: rgba(15, 23, 42, 0.3);">
+                                    <div class="strategy-header" style="flex-direction: column; gap: 0.3rem; align-items: flex-start; border: none; padding-bottom: 0;">
+                                        <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.8rem;">
+                                            <span class="strategy-label">추천 매수: <b style="color:var(--text)">${c.buy_price.toLocaleString()}</b></span>
+                                            <span class="strategy-label">손절: <b style="color:#ef4444">${c.sl.toLocaleString()}</b></span>
+                                        </div>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; margin-top: 0.75rem;">
+                                        <div class="target-tier" style="padding: 0.5rem 0.2rem;">
+                                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                                                <span style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">1차 1.5%</span>
+                                                <span style="font-weight: 800; color: #34d399; font-size: 0.85rem;">${Math.round(c.tp1.price).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                        <div class="target-tier" style="padding: 0.5rem 0.2rem;">
+                                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                                                <span style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">2차 3.5%</span>
+                                                <span style="font-weight: 800; color: #818cf8; font-size: 0.85rem;">${Math.round(c.tp2.price).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                        <div class="target-tier" style="padding: 0.5rem 0.2rem;">
+                                            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                                                <span style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">3차 7.0%</span>
+                                                <span style="font-weight: 800; color: #c084fc; font-size: 0.85rem;">${Math.round(c.tp3.price).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        };
+
+                        // 통합된 책갈피 렌더링 (모바일 vs 데스크톱)
+                        if (isBookmarked) {
+                            if (isMobile) {
+                                // 모바일: 단일 카드에 통합 (Saved vs Live 정보를 한 카드 안에 표시)
+                                return `
+                                <div class="coin-card" style="border-color: #facc1544; background: rgba(30, 41, 59, 0.5);">
+                                    ${renderCardContent(coin, coin.current_price, true, savedState.current_price)}
+                                </div>
+                                `;
+                            } else {
+                                // 데스크톱: 기존 좌우 이원화 지원
+                                return `
+                                <div class="comparison-container" style="display: flex; gap: 2rem; animation: fadeIn 0.6s ease forwards;">
+                                    <div class="coin-card" style="flex: 1; border-color: rgba(234, 179, 8, 0.4); background: rgba(30, 41, 59, 0.4);">
+                                        ${renderCardContent(savedState, savedState.current_price, false)}
+                                    </div>
+                                    <div class="coin-card" style="flex: 1; border-color: var(--primary); box-shadow: 0 0 30px rgba(79, 70, 229, 0.15);">
+                                        ${renderCardContent(coin, coin.current_price, true, savedState.current_price)}
+                                    </div>
+                                </div>
+                                `;
+                            }
+                        } else {
+                            return `
+                            <div class="coin-card" style="animation-delay: ${index * 0.1}s">
+                                ${renderCardContent(coin, coin.current_price, true)}
+                            </div>
+                            `;
+                        }
+                    }).join('');
+                } else if (data.last_updated === null) {
+                    listEl.innerHTML = '<div class="loading">시장의 전수 조사가 진행 중입니다...<br><small style="opacity: 0.6">약 1~2분 후 자동으로 갱신됩니다.</small></div>';
+                } else {
+                    listEl.innerHTML = '<div class="no-data" style="text-align:center; padding: 4rem; color:var(--text-dim); border: 1px dashed #334155; border-radius: 20px;">조건에 부합하는 코인이 없습니다.</div>';
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                listEl.innerHTML = '<div class="no-data" style="text-align:center; padding: 4rem;">서버 오프라인 또는 연결 지연 중...</div>';
+            }
+        }
+
+        // 초기 데이터 로드
+        fetchData();
+        // 30초마다 화면 갱신
+        setInterval(fetchData, 30000);
+    </script>
+</body>
+
+</html>
