@@ -69,10 +69,15 @@ def get_recommendations():
         "recommendations": cache["data"]
     })
 
-if __name__ == '__main__':
-    # Start background threads
+# Background threads initialization (for Gunicorn/Production)
+def start_background_threads():
+    print(f"[{datetime.now()}] Starting background analysis and price update threads...")
     threading.Thread(target=update_cache, daemon=True).start()
     threading.Thread(target=live_price_update, daemon=True).start()
-    
+
+# Start threads immediately upon module import
+start_background_threads()
+
+if __name__ == '__main__':
     print("Starting Web Server at http://127.0.0.1:5000")
     app.run(host='0.0.0.0', port=5000)
